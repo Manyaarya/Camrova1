@@ -266,7 +266,6 @@ export default function Home() {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Card 1 */}
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -287,7 +286,6 @@ export default function Home() {
                 Create a photographer profile
               </h3>
             </div>
-            {/* Card 2 */}
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -306,7 +304,6 @@ export default function Home() {
               </div>
               <h3 className="font-medium text-gray-900">Showcase your work</h3>
             </div>
-            {/* Card 3 */}
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -327,7 +324,6 @@ export default function Home() {
                 Get discovered for shoots
               </h3>
             </div>
-            {/* Card 4 */}
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -395,7 +391,7 @@ export default function Home() {
                     Thanks for joining early.
                   </h3>
                   <p className="text-gray-600">
-                    We're building Camrova with our first community.
+                    We&apos;re building Camrova with our first community.
                   </p>
                 </div>
               ) : (
@@ -603,7 +599,7 @@ export default function Home() {
                     Thanks for joining early.
                   </h3>
                   <p className="text-gray-600">
-                    We're building Camrova with our first community.
+                    We&apos;re building Camrova with our first community.
                   </p>
                 </div>
               ) : (
