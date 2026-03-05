@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Camrova - Every Moment Deserves a Lens",
   description:
-    "Find affordable student photographers in Delhi. Or get discovered as one.",
+    "Find talented photographers in Delhi. Or get discovered as one.",
   keywords: [
     "photographer",
     "student photographer",
