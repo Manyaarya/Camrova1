@@ -66,9 +66,8 @@ async function appendToSheet(sheets: sheets_v4.Sheets, submission: FormData) {
   try {
     const isStudent = submission.type === "student";
 
-    // Prepare row data based on form type
-    // For Photographers: Timestamp, Name, Email, Instagram Handle / Portfolio Link, Availability, Price_per_hour, Preferred_shoot_type, Reel_creator
-    // For Clients: Name, Email, Type of Shoot, Budget Range, Phone Number
+    // For Photographers: Timestamp, Name, Email, Experience Level, Portfolio Link, Interested in Paid Gigs, Availability, Price_per_hour, Preferred_shoot_type, Reel_creator, Phone Number
+    // For Students: Timestamp, Name, Email, Type of Shoot, Budget Range, Phone Number
     const row = isStudent
       ? [
           submission.timestamp,
@@ -76,17 +75,20 @@ async function appendToSheet(sheets: sheets_v4.Sheets, submission: FormData) {
           submission.email,
           submission.typeOfShoot || "",
           submission.budgetRange || "",
-          submission.phoneNumber,
+          submission.phoneNumber || "",
         ]
       : [
           submission.timestamp,
           submission.fullName,
           submission.email,
+          submission.experienceLevel || "",
           submission.portfolioLink || "",
+          submission.interestedInPaidGigs || "",
           submission.availability || "",
           submission.pricePerHour || "",
           submission.preferredShootType || "",
           submission.reelCreator || "",
+          submission.phoneNumber || "",
         ];
 
     // Determine range based on form type
@@ -117,11 +119,14 @@ async function appendToSheet(sheets: sheets_v4.Sheets, submission: FormData) {
             "Timestamp",
             "Name",
             "Email",
-            "Instagram Handle / Portfolio Link",
+            "Experience Level",
+            "Portfolio Link",
+            "Interested in Paid Gigs",
             "Availability",
             "Price_per_hour",
             "Preferred_shoot_type",
             "Reel_creator",
+            "Phone Number",
           ];
 
       await sheets.spreadsheets.values.update({
@@ -231,11 +236,14 @@ export async function POST(request: Request) {
             <h2>New Photographer Signup</h2>
             <p><strong>Name:</strong> ${body.fullName}</p>
             <p><strong>Email:</strong> ${body.email}</p>
+            <p><strong>Experience Level:</strong> ${body.experienceLevel || "Not specified"}</p>
             <p><strong>Portfolio:</strong> ${body.portfolioLink}</p>
+            <p><strong>Interested in Paid Gigs:</strong> ${body.interestedInPaidGigs}</p>
             <p><strong>Availability:</strong> ${body.availability || "Not specified"}</p>
             <p><strong>Price per Hour:</strong> ${body.pricePerHour || "Not specified"}</p>
             <p><strong>Preferred Shoot Type:</strong> ${body.preferredShootType || "Not specified"}</p>
             <p><strong>Reel Creator:</strong> ${body.reelCreator || "Not specified"}</p>
+            <p><strong>Phone:</strong> ${body.phoneNumber}</p>
             <p><strong>Submitted:</strong> ${submission.timestamp}</p>
           `;
 
