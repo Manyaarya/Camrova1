@@ -16,6 +16,11 @@ interface PhotographerFormData {
   experienceLevel: string;
   portfolioLink: string;
   interestedInPaidGigs: string;
+  availability: string;
+  pricePerHour: string;
+  pricePerHourOther: string;
+  preferredShootType: string;
+  reelCreator: string;
   phoneNumber: string;
 }
 
@@ -35,6 +40,11 @@ export default function Home() {
       experienceLevel: "",
       portfolioLink: "",
       interestedInPaidGigs: "",
+      availability: "",
+      pricePerHour: "",
+      pricePerHourOther: "",
+      preferredShootType: "",
+      reelCreator: "",
       phoneNumber: "",
     });
 
@@ -140,11 +150,20 @@ export default function Home() {
     e.preventDefault();
     if (!validatePhotographerForm()) return;
     setIsPhotographerSubmitting(true);
+
+    const submissionData = {
+      ...photographerForm,
+      pricePerHour:
+        photographerForm.pricePerHour === "Other"
+          ? photographerForm.pricePerHourOther
+          : photographerForm.pricePerHour,
+    };
+
     try {
       const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "photographer", ...photographerForm }),
+        body: JSON.stringify({ type: "photographer", ...submissionData }),
       });
       if (response.ok) {
         setPhotographerSuccess(true);
@@ -154,6 +173,11 @@ export default function Home() {
           experienceLevel: "",
           portfolioLink: "",
           interestedInPaidGigs: "",
+          availability: "",
+          pricePerHour: "",
+          pricePerHourOther: "",
+          preferredShootType: "",
+          reelCreator: "",
           phoneNumber: "",
         });
         setTimeout(() => setPhotographerSuccess(false), 5000);
@@ -212,15 +236,12 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="space-y-6">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900">
-              Find talented photographers in Delhi. Or get discovered as one.
+              Showcase your work. Earn through short shoots. Start with Delhi.
             </h1>
             <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
               Camrova is building a platform where photographers can showcase
               their work and get discovered for shoots. Starting with Delhi
               photographers.
-            </p>
-            <p className="text-sm text-gray-500">
-              Use your Instagram as your portfolio.
             </p>
             <p className="text-sm text-gray-500">
               Join the first photographers helping shape Camrova.
@@ -248,8 +269,8 @@ export default function Home() {
           </h2>
           <p className="text-lg text-gray-600 leading-relaxed">
             Many photographers rely only on Instagram or referrals to get work.
-            Camrova aims to make it easier for photographers to be discovered
-            and connect with people who need photoshoots.
+            Camrova helps photographers get discovered for hourly gigs and small
+            shoots.
           </p>
         </div>
       </section>
@@ -321,7 +342,7 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="font-medium text-gray-900">
-                Get discovered for shoots
+                Get discovered for hourly gigs
               </h3>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
@@ -365,215 +386,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Student Form */}
-            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  I need a Photographer
-                </h3>
-              </div>
-              {studentSuccess ? (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-                  <svg
-                    className="w-12 h-12 text-green-500 mx-auto mb-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">
-                    Thanks for joining early.
-                  </h3>
-                  <p className="text-gray-600">
-                    We&apos;re building Camrova with our first community.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleStudentSubmit} className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="studentFullName"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="studentFullName"
-                      value={studentForm.fullName}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          fullName: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.fullName ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter your full name"
-                    />
-                    {studentErrors.fullName && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.fullName}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="studentEmail"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      id="studentEmail"
-                      value={studentForm.email}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          email: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.email ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter your email address"
-                    />
-                    {studentErrors.email && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.email}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="typeOfShoot"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Type of Shoot <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="typeOfShoot"
-                      value={studentForm.typeOfShoot}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          typeOfShoot: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.typeOfShoot ? "border-red-500" : "border-gray-200"}`}
-                    >
-                      <option value="">Select type of shoot</option>
-                      <option value="Event">Event</option>
-                      <option value="Portfolio">Portfolio</option>
-                      <option value="Reels">Reels</option>
-                      <option value="Birthday">Birthday</option>
-                      <option value="Other">Other</option>
-                    </select>
-                    {studentErrors.typeOfShoot && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.typeOfShoot}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="budgetRange"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Budget Range <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="budgetRange"
-                      value={studentForm.budgetRange}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          budgetRange: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.budgetRange ? "border-red-500" : "border-gray-200"}`}
-                    >
-                      <option value="">Select budget range</option>
-                      <option value="Under 2000">Under 2000</option>
-                      <option value="2000-5000">2000-5000</option>
-                      <option value="5000+">5000+</option>
-                    </select>
-                    {studentErrors.budgetRange && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.budgetRange}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="studentPhone"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Phone Number{" "}
-                      <span className="text-gray-400">(optional)</span>
-                    </label>
-                    <input
-                      type="tel"
-                      id="studentPhone"
-                      value={studentForm.phoneNumber}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          phoneNumber: e.target.value.replace(/\D/g, ""),
-                        })
-                      }
-                      maxLength={10}
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.phoneNumber ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter 10-digit phone number"
-                    />
-                    {studentErrors.phoneNumber && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.phoneNumber}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isStudentSubmitting}
-                    className="w-full px-8 py-4 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
-                  >
-                    {isStudentSubmitting ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit"
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
-
-            {/* Photographer Form */}
+            {/* Photographer Form - First */}
             <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100">
               <div className="text-center mb-6">
                 <h3 className="text-xl font-semibold text-gray-900">
@@ -761,6 +574,190 @@ export default function Home() {
                       </p>
                     )}
                   </div>
+
+                  {/* New Optional Fields */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Availability for hourly gigs{" "}
+                      <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Would you be open to 1–2 hour paid shoots for reels,
+                      portraits, or small events?
+                    </p>
+                    <div className="flex gap-4 flex-wrap">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="availability"
+                          value="Yes"
+                          checked={photographerForm.availability === "Yes"}
+                          onChange={(e) =>
+                            setPhotographerForm({
+                              ...photographerForm,
+                              availability: e.target.value,
+                            })
+                          }
+                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
+                        />
+                        <span className="ml-2 text-gray-700">Yes</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="availability"
+                          value="No"
+                          checked={photographerForm.availability === "No"}
+                          onChange={(e) =>
+                            setPhotographerForm({
+                              ...photographerForm,
+                              availability: e.target.value,
+                            })
+                          }
+                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
+                        />
+                        <span className="ml-2 text-gray-700">No</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="availability"
+                          value="Sometimes"
+                          checked={
+                            photographerForm.availability === "Sometimes"
+                          }
+                          onChange={(e) =>
+                            setPhotographerForm({
+                              ...photographerForm,
+                              availability: e.target.value,
+                            })
+                          }
+                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
+                        />
+                        <span className="ml-2 text-gray-700">Sometimes</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="pricePerHour"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Expected price per hour{" "}
+                      <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <select
+                      id="pricePerHour"
+                      value={photographerForm.pricePerHour}
+                      onChange={(e) =>
+                        setPhotographerForm({
+                          ...photographerForm,
+                          pricePerHour: e.target.value,
+                          pricePerHourOther:
+                            e.target.value === "Other"
+                              ? photographerForm.pricePerHourOther
+                              : "",
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
+                    >
+                      <option value="">Select price range</option>
+                      <option value="₹500-₹1000">₹500–₹1000</option>
+                      <option value="₹1000-₹2000">₹1000–₹2000</option>
+                      <option value="₹2000+">₹2000+</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    {photographerForm.pricePerHour === "Other" && (
+                      <input
+                        type="text"
+                        id="pricePerHourOther"
+                        value={photographerForm.pricePerHourOther}
+                        onChange={(e) =>
+                          setPhotographerForm({
+                            ...photographerForm,
+                            pricePerHourOther: e.target.value,
+                          })
+                        }
+                        className="mt-2 w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
+                        placeholder="Enter your expected price"
+                      />
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="preferredShootType"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Preferred shoot type{" "}
+                      <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <select
+                      id="preferredShootType"
+                      value={photographerForm.preferredShootType}
+                      onChange={(e) =>
+                        setPhotographerForm({
+                          ...photographerForm,
+                          preferredShootType: e.target.value,
+                        })
+                      }
+                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
+                    >
+                      <option value="">Select preferred shoot type</option>
+                      <option value="Reels">Reels</option>
+                      <option value="Content">Content</option>
+                      <option value="Portrait">Portrait</option>
+                      <option value="Small Event">Small Event</option>
+                      <option value="Product">Product</option>
+                      <option value="Any">Any</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Reel Creator{" "}
+                      <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Can you create Reels / short-form video content?
+                    </p>
+                    <div className="flex gap-6">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="reelCreator"
+                          value="Yes"
+                          checked={photographerForm.reelCreator === "Yes"}
+                          onChange={(e) =>
+                            setPhotographerForm({
+                              ...photographerForm,
+                              reelCreator: e.target.value,
+                            })
+                          }
+                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
+                        />
+                        <span className="ml-2 text-gray-700">Yes</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="reelCreator"
+                          value="No"
+                          checked={photographerForm.reelCreator === "No"}
+                          onChange={(e) =>
+                            setPhotographerForm({
+                              ...photographerForm,
+                              reelCreator: e.target.value,
+                            })
+                          }
+                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
+                        />
+                        <span className="ml-2 text-gray-700">No</span>
+                      </label>
+                    </div>
+                  </div>
+
                   <div>
                     <label
                       htmlFor="photographerPhone"
@@ -795,6 +792,214 @@ export default function Home() {
                     className="w-full px-8 py-4 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
                   >
                     {isPhotographerSubmitting ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit"
+                    )}
+                  </button>
+                </form>
+              )}
+            </div>
+
+            {/* Student Form - Second */}
+            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100">
+              <div className="text-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  I need a Photographer
+                </h3>
+              </div>
+              {studentSuccess ? (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+                  <svg
+                    className="w-12 h-12 text-green-500 mx-auto mb-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">
+                    Thanks for joining early.
+                  </h3>
+                  <p className="text-gray-600">
+                    We&apos;re building Camrova with our first community.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleStudentSubmit} className="space-y-4">
+                  <div>
+                    <label
+                      htmlFor="studentFullName"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="studentFullName"
+                      value={studentForm.fullName}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          fullName: e.target.value,
+                        })
+                      }
+                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.fullName ? "border-red-500" : "border-gray-200"}`}
+                      placeholder="Enter your full name"
+                    />
+                    {studentErrors.fullName && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {studentErrors.fullName}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="studentEmail"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      id="studentEmail"
+                      value={studentForm.email}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          email: e.target.value,
+                        })
+                      }
+                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.email ? "border-red-500" : "border-gray-200"}`}
+                      placeholder="Enter your email address"
+                    />
+                    {studentErrors.email && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {studentErrors.email}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="typeOfShoot"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Type of Shoot <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="typeOfShoot"
+                      value={studentForm.typeOfShoot}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          typeOfShoot: e.target.value,
+                        })
+                      }
+                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.typeOfShoot ? "border-red-500" : "border-gray-200"}`}
+                    >
+                      <option value="">Select type of shoot</option>
+                      <option value="Event">Event</option>
+                      <option value="Portfolio">Portfolio</option>
+                      <option value="Reels">Reels</option>
+                      <option value="Birthday">Birthday</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    {studentErrors.typeOfShoot && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {studentErrors.typeOfShoot}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="budgetRange"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Budget Range <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      id="budgetRange"
+                      value={studentForm.budgetRange}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          budgetRange: e.target.value,
+                        })
+                      }
+                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.budgetRange ? "border-red-500" : "border-gray-200"}`}
+                    >
+                      <option value="">Select budget range</option>
+                      <option value="Under 2000">Under 2000</option>
+                      <option value="2000-5000">2000-5000</option>
+                      <option value="5000+">5000+</option>
+                    </select>
+                    {studentErrors.budgetRange && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {studentErrors.budgetRange}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="studentPhone"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Phone Number{" "}
+                      <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      id="studentPhone"
+                      value={studentForm.phoneNumber}
+                      onChange={(e) =>
+                        setStudentForm({
+                          ...studentForm,
+                          phoneNumber: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
+                      maxLength={10}
+                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.phoneNumber ? "border-red-500" : "border-gray-200"}`}
+                      placeholder="Enter 10-digit phone number"
+                    />
+                    {studentErrors.phoneNumber && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {studentErrors.phoneNumber}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isStudentSubmitting}
+                    className="w-full px-8 py-4 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
+                  >
+                    {isStudentSubmitting ? (
                       <>
                         <svg
                           className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"

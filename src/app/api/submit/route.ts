@@ -7,13 +7,17 @@ import { google, sheets_v4 } from "googleapis";
 interface FormData {
   type: string;
   fullName: string;
-  collegeName?: string;
+  email: string;
   typeOfShoot?: string;
   budgetRange?: string;
   phoneNumber: string;
   experienceLevel?: string;
   portfolioLink?: string;
   interestedInPaidGigs?: string;
+  availability?: string;
+  pricePerHour?: string;
+  preferredShootType?: string;
+  reelCreator?: string;
   timestamp: string;
 }
 
@@ -63,29 +67,30 @@ async function appendToSheet(sheets: sheets_v4.Sheets, submission: FormData) {
     const isStudent = submission.type === "student";
 
     // Prepare row data based on form type
+    // For Photographers: Timestamp, Name, Email, Instagram Handle / Portfolio Link, Availability, Price_per_hour, Preferred_shoot_type, Reel_creator
+    // For Clients: Name, Email, Type of Shoot, Budget Range, Phone Number
     const row = isStudent
       ? [
           submission.timestamp,
-          submission.type,
           submission.fullName,
-          submission.collegeName || "",
+          submission.email,
           submission.typeOfShoot || "",
           submission.budgetRange || "",
           submission.phoneNumber,
         ]
       : [
           submission.timestamp,
-          submission.type,
           submission.fullName,
-          submission.collegeName || "",
-          submission.experienceLevel || "",
+          submission.email,
           submission.portfolioLink || "",
-          submission.interestedInPaidGigs || "",
-          submission.phoneNumber,
+          submission.availability || "",
+          submission.pricePerHour || "",
+          submission.preferredShootType || "",
+          submission.reelCreator || "",
         ];
 
     // Determine range based on form type
-    const sheetName = isStudent ? "Students" : "Photographers";
+    const sheetName = isStudent ? "Clients" : "Photographers";
     const range = `${sheetName}!A:A`;
 
     // Check if we need to add header row first
@@ -102,22 +107,21 @@ async function appendToSheet(sheets: sheets_v4.Sheets, submission: FormData) {
       const headers = isStudent
         ? [
             "Timestamp",
-            "Type",
-            "Full Name",
-            "College Name",
+            "Name",
+            "Email",
             "Type of Shoot",
             "Budget Range",
             "Phone Number",
           ]
         : [
             "Timestamp",
-            "Type",
-            "Full Name",
-            "College Name",
-            "Experience Level",
-            "Portfolio Link",
-            "Interested in Paid Gigs",
-            "Phone Number",
+            "Name",
+            "Email",
+            "Instagram Handle / Portfolio Link",
+            "Availability",
+            "Price_per_hour",
+            "Preferred_shoot_type",
+            "Reel_creator",
           ];
 
       await sheets.spreadsheets.values.update({
@@ -210,15 +214,15 @@ export async function POST(request: Request) {
       try {
         const isStudent = body.type === "student";
         const subject = isStudent
-          ? `📸 New Student Request - ${body.fullName}`
+          ? `📸 New Client Request - ${body.fullName}`
           : `📷 New Photographer Signup - ${body.fullName}`;
 
         const htmlContent = isStudent
           ? `
-            <h2>New Student Request</h2>
+            <h2>New Client Request</h2>
             <p><strong>Name:</strong> ${body.fullName}</p>
-            <p><strong>College:</strong> ${body.collegeName || "Not specified"}</p>
-            <p><strong>Shoot Type:</strong> ${body.typeOfShoot}</p>
+            <p><strong>Email:</strong> ${body.email}</p>
+            <p><strong>Type of Shoot:</strong> ${body.typeOfShoot}</p>
             <p><strong>Budget:</strong> ${body.budgetRange}</p>
             <p><strong>Phone:</strong> ${body.phoneNumber}</p>
             <p><strong>Submitted:</strong> ${submission.timestamp}</p>
@@ -226,11 +230,12 @@ export async function POST(request: Request) {
           : `
             <h2>New Photographer Signup</h2>
             <p><strong>Name:</strong> ${body.fullName}</p>
-            <p><strong>College:</strong> ${body.collegeName || "Not specified"}</p>
-            <p><strong>Experience:</strong> ${body.experienceLevel}</p>
+            <p><strong>Email:</strong> ${body.email}</p>
             <p><strong>Portfolio:</strong> ${body.portfolioLink}</p>
-            <p><strong>Interested in Paid Gigs:</strong> ${body.interestedInPaidGigs}</p>
-            <p><strong>Phone:</strong> ${body.phoneNumber}</p>
+            <p><strong>Availability:</strong> ${body.availability || "Not specified"}</p>
+            <p><strong>Price per Hour:</strong> ${body.pricePerHour || "Not specified"}</p>
+            <p><strong>Preferred Shoot Type:</strong> ${body.preferredShootType || "Not specified"}</p>
+            <p><strong>Reel Creator:</strong> ${body.reelCreator || "Not specified"}</p>
             <p><strong>Submitted:</strong> ${submission.timestamp}</p>
           `;
 
