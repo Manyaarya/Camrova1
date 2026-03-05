@@ -90,7 +90,7 @@ async function appendToSheet(sheets: sheets_v4.Sheets, submission: FormData) {
         ];
 
     // Determine range based on form type
-    const sheetName = isStudent ? "Clients" : "Photographers";
+    const sheetName = isStudent ? "Students" : "Photographers";
     const range = `${sheetName}!A:A`;
 
     // Check if we need to add header row first
