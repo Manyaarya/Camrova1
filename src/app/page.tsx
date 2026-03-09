@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import CTAButton from "@/components/CTAButton";
 
-interface StudentFormData {
+interface FormData {
   fullName: string;
   email: string;
   typeOfShoot: string;
@@ -10,22 +14,117 @@ interface StudentFormData {
   phoneNumber: string;
 }
 
-interface PhotographerFormData {
-  fullName: string;
-  email: string;
-  experienceLevel: string;
-  portfolioLink: string;
-  interestedInPaidGigs: string;
-  availability: string;
-  pricePerHour: string;
-  pricePerHourOther: string;
-  preferredShootType: string;
-  reelCreator: string;
-  phoneNumber: string;
+// Animation settings
+const fadeUpSettings = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } as const },
+};
+
+const cardHover = {
+  rest: { borderColor: "#2a2520", y: 0 },
+  hover: {
+    borderColor: "#c9a96e",
+    y: -4,
+    boxShadow: "0 0 20px rgba(201, 169, 110, 0.15)",
+    transition: { duration: 0.2 } as const,
+  },
+};
+
+// AnimatedSection component
+function AnimatedSection({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.6 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// AnimatedCard component
+function AnimatedCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <motion.div
+      className={className}
+      initial="rest"
+      whileHover="hover"
+      animate="rest"
+      variants={cardHover}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// StatsCounter component
+function StatsCounter() {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isInView) {
+          setIsInView(true);
+        }
+      },
+      { threshold: 0.5 },
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, [isInView]);
+
+  useEffect(() => {
+    if (isInView) {
+      let start = 0;
+      const end = 10;
+      const duration = 2000;
+      const increment = end / (duration / 16);
+
+      const timer = setInterval(() => {
+        start += increment;
+        if (start >= end) {
+          setCount(end);
+          clearInterval(timer);
+        } else {
+          setCount(Math.floor(start));
+        }
+      }, 16);
+
+      return () => clearInterval(timer);
+    }
+  }, [isInView]);
+
+  return (
+    <span ref={ref} className="text-2xl sm:text-3xl font-bold text-foreground">
+      {count}+ photographers already signed up
+    </span>
+  );
 }
 
 export default function Home() {
-  const [studentForm, setStudentForm] = useState<StudentFormData>({
+  const [form, setForm] = useState<FormData>({
     fullName: "",
     email: "",
     typeOfShoot: "",
@@ -33,1014 +132,536 @@ export default function Home() {
     phoneNumber: "",
   });
 
-  const [photographerForm, setPhotographerForm] =
-    useState<PhotographerFormData>({
-      fullName: "",
-      email: "",
-      experienceLevel: "",
-      portfolioLink: "",
-      interestedInPaidGigs: "",
-      availability: "",
-      pricePerHour: "",
-      pricePerHourOther: "",
-      preferredShootType: "",
-      reelCreator: "",
-      phoneNumber: "",
-    });
-
-  const [isStudentSubmitting, setIsStudentSubmitting] = useState(false);
-  const [isPhotographerSubmitting, setIsPhotographerSubmitting] =
-    useState(false);
-  const [studentSuccess, setStudentSuccess] = useState(false);
-  const [photographerSuccess, setPhotographerSuccess] = useState(false);
-  const [studentErrors, setStudentErrors] = useState<Record<string, string>>(
-    {},
-  );
-  const [photographerErrors, setPhotographerErrors] = useState<
-    Record<string, string>
-  >({});
-
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const isValidEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  const validateStudentForm = (): boolean => {
-    const errors: Record<string, string> = {};
-    if (!studentForm.fullName.trim()) errors.fullName = "Full Name is required";
-    if (!studentForm.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!isValidEmail(studentForm.email)) {
-      errors.email = "Please enter a valid email address";
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!form.fullName.trim()) newErrors.fullName = "Full Name is required";
+    if (!form.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!isValidEmail(form.email)) {
+      newErrors.email = "Please enter a valid email";
     }
-    if (!studentForm.typeOfShoot)
-      errors.typeOfShoot = "Please select a shoot type";
-    if (!studentForm.budgetRange)
-      errors.budgetRange = "Please select a budget range";
-    if (
-      studentForm.phoneNumber.trim() &&
-      !/^\d{10}$/.test(studentForm.phoneNumber)
-    ) {
-      errors.phoneNumber = "Please enter a valid 10-digit phone number";
+    if (!form.typeOfShoot) newErrors.typeOfShoot = "Please select a shoot type";
+    if (!form.budgetRange) newErrors.budgetRange = "Please select a budget";
+    if (form.phoneNumber && !/^\d{10}$/.test(form.phoneNumber)) {
+      newErrors.phoneNumber = "Please enter a valid 10-digit number";
     }
-    setStudentErrors(errors);
-    return Object.keys(errors).length === 0;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const validatePhotographerForm = (): boolean => {
-    const errors: Record<string, string> = {};
-    if (!photographerForm.fullName.trim())
-      errors.fullName = "Full Name is required";
-    if (!photographerForm.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!isValidEmail(photographerForm.email)) {
-      errors.email = "Please enter a valid email address";
-    }
-    if (!photographerForm.experienceLevel)
-      errors.experienceLevel = "Please select experience level";
-    if (!photographerForm.portfolioLink.trim())
-      errors.portfolioLink = "Portfolio Link is required";
-    if (!photographerForm.interestedInPaidGigs)
-      errors.interestedInPaidGigs = "Please select an option";
-    if (
-      photographerForm.phoneNumber.trim() &&
-      !/^\d{10}$/.test(photographerForm.phoneNumber)
-    ) {
-      errors.phoneNumber = "Please enter a valid 10-digit phone number";
-    }
-    setPhotographerErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleStudentSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!validateStudentForm()) return;
-    setIsStudentSubmitting(true);
+    if (!validateForm()) return;
+    setIsSubmitting(true);
     try {
       const response = await fetch("/api/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "student", ...studentForm }),
+        body: JSON.stringify({ type: "creator", ...form }),
       });
       if (response.ok) {
-        setStudentSuccess(true);
-        setStudentForm({
+        setSuccess(true);
+        setForm({
           fullName: "",
           email: "",
           typeOfShoot: "",
           budgetRange: "",
           phoneNumber: "",
         });
-        setTimeout(() => setStudentSuccess(false), 5000);
+        setTimeout(() => setSuccess(false), 5000);
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
+      console.error("Error:", error);
     } finally {
-      setIsStudentSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handlePhotographerSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!validatePhotographerForm()) return;
-    setIsPhotographerSubmitting(true);
+  const stats = [
+    "10+ Photographers",
+    "Delhi-NCR",
+    "Hourly Bookings",
+    "Starting ₹1000",
+  ];
 
-    const submissionData = {
-      ...photographerForm,
-      pricePerHour:
-        photographerForm.pricePerHour === "Other"
-          ? photographerForm.pricePerHourOther
-          : photographerForm.pricePerHour,
-    };
+  const creatorSteps = [
+    {
+      num: "1",
+      title: "Tell us what you need",
+      desc: "Select your shoot type and budget",
+    },
+    {
+      num: "2",
+      title: "Get matched with a verified photographer",
+      desc: "We connect you with vetted Delhi photographers",
+    },
+    {
+      num: "3",
+      title: "Book, shoot, get your content",
+      desc: "Show up, shoot, receive your photos next day",
+    },
+  ];
 
-    try {
-      const response = await fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "photographer", ...submissionData }),
-      });
-      if (response.ok) {
-        setPhotographerSuccess(true);
-        setPhotographerForm({
-          fullName: "",
-          email: "",
-          experienceLevel: "",
-          portfolioLink: "",
-          interestedInPaidGigs: "",
-          availability: "",
-          pricePerHour: "",
-          pricePerHourOther: "",
-          preferredShootType: "",
-          reelCreator: "",
-          phoneNumber: "",
-        });
-        setTimeout(() => setPhotographerSuccess(false), 5000);
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-    } finally {
-      setIsPhotographerSubmitting(false);
-    }
-  };
+  const photographerSteps = [
+    {
+      num: "1",
+      title: "Create your profile",
+      desc: "Showcase your work and rates",
+    },
+    {
+      num: "2",
+      title: "Get discovered by creators",
+      desc: "Creators find you directly",
+    },
+    {
+      num: "3",
+      title: "Earn on your own schedule",
+      desc: "Accept gigs that fit your calendar",
+    },
+  ];
+
+  const whyCards = [
+    {
+      icon: "🏢",
+      title: "No Agencies",
+      desc: "Direct connection. No middlemen.",
+    },
+    {
+      icon: "✓",
+      title: "Verified Photographers",
+      desc: "Every photographer is vetted.",
+    },
+    {
+      icon: "⏱",
+      title: "Book by the Hour",
+      desc: "Flexible. Affordable. You decide.",
+    },
+    {
+      icon: "💰",
+      title: "Starting ₹1000",
+      desc: "Affordable pricing for everyone.",
+    },
+    {
+      icon: "🎁",
+      title: "First 3 Bookings Free",
+      desc: "Zero commission for photographers.",
+    },
+    {
+      icon: "📍",
+      title: "Delhi Focused",
+      desc: "Built for the local community.",
+    },
+  ];
+
+  const shootTypes = [
+    { name: "Reels & Short Video", icon: "🎬" },
+    { name: "Portraits", icon: "📸" },
+    { name: "Product Shoots", icon: "📦" },
+    { name: "Brand Content", icon: "💼" },
+    { name: "Events", icon: "🎉" },
+    { name: "Behind the Scenes", icon: "🎥" },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+    <div className="min-h-screen bg-background">
+      <Navbar />
+
+      {/* HERO SECTION */}
+      <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+        <div className="absolute inset-0 gold-glow pointer-events-none" />
+
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: { transition: { staggerChildren: 0.15 } },
+            }}
+          >
+            <motion.h1
+              className="font-heading text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight"
+              variants={fadeUpSettings}
+            >
+              Delhi&apos;s Photographers.
+              <br />
+              <span className="text-gradient">On Demand. By the Hour.</span>
+            </motion.h1>
+
+            <motion.p
+              className="mt-6 text-lg sm:text-xl text-foreground/70 max-w-2xl mx-auto"
+              variants={fadeUpSettings}
+            >
+              Book verified photographers for reels, portraits and brand shoots.
+              Starting ₹1000. No agencies. No minimums.
+            </motion.p>
+
+            <motion.div
+              className="mt-10 flex flex-col sm:flex-row gap-4 justify-center"
+              variants={fadeUpSettings}
+            >
+              <CTAButton href="/creators" variant="primary">
+                Find a Photographer
+              </CTAButton>
+              <CTAButton href="/photographers" variant="secondary">
+                Join as Photographer
+              </CTAButton>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* STATS BAR */}
+      <AnimatedSection>
+        <section className="border-y border-gold/30 bg-card/50 py-4">
+          <div className="max-w-5xl mx-auto px-4 flex flex-wrap justify-center gap-4 sm:gap-8 md:gap-12 text-sm text-foreground/60">
+            {stats.map((stat, i) => (
+              <span key={i} className="flex items-center gap-2">
+                {stat}
+                {i < stats.length - 1 && (
+                  <span className="hidden sm:inline text-gold/40">·</span>
+                )}
+              </span>
+            ))}
+          </div>
+        </section>
+      </AnimatedSection>
+
+      {/* HOW IT WORKS */}
+      <section className="py-16 sm:py-28 bg-pattern">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <span className="text-2xl font-semibold text-gray-900">
-              Camrova
-            </span>
-            <div className="hidden md:flex items-center space-x-8">
-              <button
-                onClick={() => scrollToSection("hero")}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => scrollToSection("why")}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Why Camrova
-              </button>
-              <button
-                onClick={() => scrollToSection("benefits")}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Benefits
-              </button>
-              <button
-                onClick={() => scrollToSection("signup")}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                Join
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+          <AnimatedSection>
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-center mb-12 sm:mb-16">
+              Simple. Fast. <span className="text-gold">Done.</span>
+            </h2>
+          </AnimatedSection>
 
-      {/* Hero Section */}
-      <section
-        id="hero"
-        className="min-h-screen flex items-center justify-center pt-16"
-      >
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="space-y-6">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900">
-              Showcase your work. Earn through short shoots. Start with Delhi.
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-              Camrova is building a platform where photographers can showcase
-              their work and get discovered for shoots. Starting with Delhi
-              photographers.
-            </p>
-            <p className="text-sm text-gray-500">
-              Join the first photographers helping shape Camrova.
-            </p>
-            <div className="pt-8">
-              <button
-                onClick={() => scrollToSection("signup")}
-                className="px-8 py-4 bg-gray-900 text-white font-medium rounded-full hover:bg-gray-800 transition-all transform hover:scale-105 shadow-lg"
-              >
-                Join Early Access
-              </button>
-            </div>
+          <div className="grid md:grid-cols-2 gap-10 lg:gap-16">
+            <AnimatedSection>
+              <div>
+                <h3 className="font-heading text-xl font-semibold text-gold mb-6 sm:mb-8 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center text-gold">
+                    👤
+                  </span>
+                  For Creators
+                </h3>
+                <div className="space-y-5 sm:space-y-6">
+                  {creatorSteps.map((step, i) => (
+                    <motion.div
+                      key={i}
+                      className="flex gap-4"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1, duration: 0.4 }}
+                    >
+                      <div className="step-number bg-gold/10 text-gold border border-gold/30">
+                        {step.num}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">
+                          {step.title}
+                        </h4>
+                        <p className="text-foreground/60 text-sm mt-1">
+                          {step.desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </AnimatedSection>
+
+            <AnimatedSection>
+              <div>
+                <h3 className="font-heading text-xl font-semibold text-gold mb-6 sm:mb-8 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center text-gold">
+                    📷
+                  </span>
+                  For Photographers
+                </h3>
+                <div className="space-y-5 sm:space-y-6">
+                  {photographerSteps.map((step, i) => (
+                    <motion.div
+                      key={i}
+                      className="flex gap-4"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1, duration: 0.4 }}
+                    >
+                      <div className="step-number bg-gold/10 text-gold border border-gold/30">
+                        {step.num}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground">
+                          {step.title}
+                        </h4>
+                        <p className="text-foreground/60 text-sm mt-1">
+                          {step.desc}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </AnimatedSection>
           </div>
         </div>
       </section>
 
-      {/* Why Camrova Section */}
-      <section
-        id="why"
-        className="min-h-[50vh] flex items-center justify-center py-20 bg-white"
-      >
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-semibold text-gray-900 mb-6">
-            Why Camrova?
-          </h2>
-          <p className="text-lg text-gray-600 leading-relaxed">
-            Many photographers rely only on Instagram or referrals to get work.
-            Camrova helps photographers get discovered for hourly gigs and small
-            shoots.
-          </p>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section
-        id="benefits"
-        className="min-h-[50vh] flex items-center justify-center py-20 bg-gray-50"
-      >
+      {/* WHY CAMROVA */}
+      <section className="py-16 sm:py-28">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-semibold text-gray-900">
-              Benefits
+          <AnimatedSection>
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-center mb-4">
+              Why Camrova?
             </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-6 h-6 text-gray-700"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </div>
-              <h3 className="font-medium text-gray-900">
-                Create a photographer profile
-              </h3>
-            </div>
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-6 h-6 text-gray-700"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-              </div>
-              <h3 className="font-medium text-gray-900">Showcase your work</h3>
-            </div>
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-6 h-6 text-gray-700"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="font-medium text-gray-900">
-                Get discovered for hourly gigs
-              </h3>
-            </div>
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100 text-center">
-              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg
-                  className="w-6 h-6 text-gray-700"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                  />
-                </svg>
-              </div>
-              <h3 className="font-medium text-gray-900">
-                Be part of the first Camrova community
-              </h3>
-            </div>
+            <p className="text-center text-foreground/60 mb-12 sm:mb-16 max-w-xl mx-auto">
+              We&apos;re building the future of Delhi&apos;s creator economy.
+            </p>
+          </AnimatedSection>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {whyCards.map((card, i) => (
+              <AnimatedCard
+                key={i}
+                className="bg-card border border-border rounded-lg p-5 sm:p-6"
+              >
+                <div className="text-3xl mb-3 sm:mb-4">{card.icon}</div>
+                <h3 className="font-heading text-lg font-semibold text-foreground mb-2">
+                  {card.title}
+                </h3>
+                <p className="text-foreground/60 text-sm">{card.desc}</p>
+              </AnimatedCard>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Signup Section */}
-      <section
-        id="signup"
-        className="min-h-screen flex items-center justify-center py-20 bg-white"
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-semibold text-gray-900 mb-4">
-              Join Early Access
+      {/* SHOOT TYPES */}
+      <section className="py-16 sm:py-28 bg-card/30">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <AnimatedSection>
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-center mb-4">
+              What can you book?
             </h2>
-            <p className="text-gray-600 max-w-xl mx-auto">
-              Camrova is currently onboarding early photographers and people
-              looking for shoots.
+            <p className="text-center text-foreground/60 mb-8 sm:mb-12">
+              From reels to brand shoots — we&apos;ve got you covered.
+            </p>
+          </AnimatedSection>
+
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4">
+            {shootTypes.map((type, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.4 }}
+                className="flex-shrink-0 w-36 sm:w-48 bg-card border border-border rounded-lg p-4 sm:p-5 text-center card-hover"
+              >
+                <div className="text-3xl mb-2 sm:mb-3">{type.icon}</div>
+                <h3 className="font-medium text-foreground text-xs sm:text-sm">
+                  {type.name}
+                </h3>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF */}
+      <section className="py-16 sm:py-28 gold-glow">
+        <AnimatedSection>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="font-heading text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 sm:mb-6">
+              Join Delhi&apos;s fastest growing
+              <br />
+              <span className="text-gold">photographer community</span>
+            </h2>
+            <p className="text-lg sm:text-xl font-bold text-foreground mb-3 sm:mb-4">
+              <StatsCounter />
+            </p>
+            <p className="text-foreground/60">
+              Be part of the first wave. Shape the future.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Photographer Form - First */}
-            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  I am a Photographer
-                </h3>
-              </div>
-              {photographerSuccess ? (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-                  <svg
-                    className="w-12 h-12 text-green-500 mx-auto mb-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">
-                    Thanks for joining early.
-                  </h3>
-                  <p className="text-gray-600">
-                    We&apos;re building Camrova with our first community.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handlePhotographerSubmit} className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="photographerFullName"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="photographerFullName"
-                      value={photographerForm.fullName}
-                      onChange={(e) =>
-                        setPhotographerForm({
-                          ...photographerForm,
-                          fullName: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${photographerErrors.fullName ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter your full name"
-                    />
-                    {photographerErrors.fullName && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {photographerErrors.fullName}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="photographerEmail"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      id="photographerEmail"
-                      value={photographerForm.email}
-                      onChange={(e) =>
-                        setPhotographerForm({
-                          ...photographerForm,
-                          email: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${photographerErrors.email ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter your email address"
-                    />
-                    {photographerErrors.email && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {photographerErrors.email}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="experienceLevel"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Experience Level <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="experienceLevel"
-                      value={photographerForm.experienceLevel}
-                      onChange={(e) =>
-                        setPhotographerForm({
-                          ...photographerForm,
-                          experienceLevel: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${photographerErrors.experienceLevel ? "border-red-500" : "border-gray-200"}`}
-                    >
-                      <option value="">Select experience level</option>
-                      <option value="Beginner">Beginner</option>
-                      <option value="Intermediate">Intermediate</option>
-                      <option value="Professional">Professional</option>
-                    </select>
-                    {photographerErrors.experienceLevel && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {photographerErrors.experienceLevel}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="portfolioLink"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Instagram or Portfolio Link{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="url"
-                      id="portfolioLink"
-                      value={photographerForm.portfolioLink}
-                      onChange={(e) =>
-                        setPhotographerForm({
-                          ...photographerForm,
-                          portfolioLink: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${photographerErrors.portfolioLink ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="https://instagram.com/yourprofile or portfolio URL"
-                    />
-                    {photographerErrors.portfolioLink && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {photographerErrors.portfolioLink}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Interested in Paid Gigs?{" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex gap-6">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="paidGigs"
-                          value="Yes"
-                          checked={
-                            photographerForm.interestedInPaidGigs === "Yes"
-                          }
-                          onChange={(e) =>
-                            setPhotographerForm({
-                              ...photographerForm,
-                              interestedInPaidGigs: e.target.value,
-                            })
-                          }
-                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
-                        />
-                        <span className="ml-2 text-gray-700">Yes</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="paidGigs"
-                          value="No"
-                          checked={
-                            photographerForm.interestedInPaidGigs === "No"
-                          }
-                          onChange={(e) =>
-                            setPhotographerForm({
-                              ...photographerForm,
-                              interestedInPaidGigs: e.target.value,
-                            })
-                          }
-                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
-                        />
-                        <span className="ml-2 text-gray-700">No</span>
-                      </label>
-                    </div>
-                    {photographerErrors.interestedInPaidGigs && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {photographerErrors.interestedInPaidGigs}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* New Optional Fields */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Availability for hourly gigs{" "}
-                      <span className="text-gray-400">(optional)</span>
-                    </label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Would you be open to 1–2 hour paid shoots for reels,
-                      portraits, or small events?
-                    </p>
-                    <div className="flex gap-4 flex-wrap">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="availability"
-                          value="Yes"
-                          checked={photographerForm.availability === "Yes"}
-                          onChange={(e) =>
-                            setPhotographerForm({
-                              ...photographerForm,
-                              availability: e.target.value,
-                            })
-                          }
-                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
-                        />
-                        <span className="ml-2 text-gray-700">Yes</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="availability"
-                          value="No"
-                          checked={photographerForm.availability === "No"}
-                          onChange={(e) =>
-                            setPhotographerForm({
-                              ...photographerForm,
-                              availability: e.target.value,
-                            })
-                          }
-                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
-                        />
-                        <span className="ml-2 text-gray-700">No</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="availability"
-                          value="Sometimes"
-                          checked={
-                            photographerForm.availability === "Sometimes"
-                          }
-                          onChange={(e) =>
-                            setPhotographerForm({
-                              ...photographerForm,
-                              availability: e.target.value,
-                            })
-                          }
-                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
-                        />
-                        <span className="ml-2 text-gray-700">Sometimes</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="pricePerHour"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Expected price per hour{" "}
-                      <span className="text-gray-400">(optional)</span>
-                    </label>
-                    <select
-                      id="pricePerHour"
-                      value={photographerForm.pricePerHour}
-                      onChange={(e) =>
-                        setPhotographerForm({
-                          ...photographerForm,
-                          pricePerHour: e.target.value,
-                          pricePerHourOther:
-                            e.target.value === "Other"
-                              ? photographerForm.pricePerHourOther
-                              : "",
-                        })
-                      }
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
-                    >
-                      <option value="">Select price range</option>
-                      <option value="₹500-₹1000">₹500–₹1000</option>
-                      <option value="₹1000-₹2000">₹1000–₹2000</option>
-                      <option value="₹2000+">₹2000+</option>
-                      <option value="Other">Other</option>
-                    </select>
-                    {photographerForm.pricePerHour === "Other" && (
-                      <input
-                        type="text"
-                        id="pricePerHourOther"
-                        value={photographerForm.pricePerHourOther}
-                        onChange={(e) =>
-                          setPhotographerForm({
-                            ...photographerForm,
-                            pricePerHourOther: e.target.value,
-                          })
-                        }
-                        className="mt-2 w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
-                        placeholder="Enter your expected price"
-                      />
-                    )}
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="preferredShootType"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Preferred shoot type{" "}
-                      <span className="text-gray-400">(optional)</span>
-                    </label>
-                    <select
-                      id="preferredShootType"
-                      value={photographerForm.preferredShootType}
-                      onChange={(e) =>
-                        setPhotographerForm({
-                          ...photographerForm,
-                          preferredShootType: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all"
-                    >
-                      <option value="">Select preferred shoot type</option>
-                      <option value="Reels">Reels</option>
-                      <option value="Content">Content</option>
-                      <option value="Portrait">Portrait</option>
-                      <option value="Small Event">Small Event</option>
-                      <option value="Product">Product</option>
-                      <option value="Any">Any</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Reel Creator{" "}
-                      <span className="text-gray-400">(optional)</span>
-                    </label>
-                    <p className="text-xs text-gray-500 mb-2">
-                      Can you create Reels / short-form video content?
-                    </p>
-                    <div className="flex gap-6">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="reelCreator"
-                          value="Yes"
-                          checked={photographerForm.reelCreator === "Yes"}
-                          onChange={(e) =>
-                            setPhotographerForm({
-                              ...photographerForm,
-                              reelCreator: e.target.value,
-                            })
-                          }
-                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
-                        />
-                        <span className="ml-2 text-gray-700">Yes</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="reelCreator"
-                          value="No"
-                          checked={photographerForm.reelCreator === "No"}
-                          onChange={(e) =>
-                            setPhotographerForm({
-                              ...photographerForm,
-                              reelCreator: e.target.value,
-                            })
-                          }
-                          className="w-4 h-4 text-gray-900 bg-white border-gray-300 focus:ring-gray-900"
-                        />
-                        <span className="ml-2 text-gray-700">No</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="photographerPhone"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Phone Number{" "}
-                      <span className="text-gray-400">(optional)</span>
-                    </label>
-                    <input
-                      type="tel"
-                      id="photographerPhone"
-                      value={photographerForm.phoneNumber}
-                      onChange={(e) =>
-                        setPhotographerForm({
-                          ...photographerForm,
-                          phoneNumber: e.target.value.replace(/\D/g, ""),
-                        })
-                      }
-                      maxLength={10}
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${photographerErrors.phoneNumber ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter 10-digit phone number"
-                    />
-                    {photographerErrors.phoneNumber && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {photographerErrors.phoneNumber}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isPhotographerSubmitting}
-                    className="w-full px-8 py-4 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
-                  >
-                    {isPhotographerSubmitting ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit"
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
-
-            {/* Student Form - Second */}
-            <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100">
-              <div className="text-center mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  I need a Photographer
-                </h3>
-              </div>
-              {studentSuccess ? (
-                <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
-                  <svg
-                    className="w-12 h-12 text-green-500 mx-auto mb-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <h3 className="text-xl font-medium text-gray-900 mb-2">
-                    Thanks for joining early.
-                  </h3>
-                  <p className="text-gray-600">
-                    We&apos;re building Camrova with our first community.
-                  </p>
-                </div>
-              ) : (
-                <form onSubmit={handleStudentSubmit} className="space-y-4">
-                  <div>
-                    <label
-                      htmlFor="studentFullName"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="studentFullName"
-                      value={studentForm.fullName}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          fullName: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.fullName ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter your full name"
-                    />
-                    {studentErrors.fullName && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.fullName}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="studentEmail"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      id="studentEmail"
-                      value={studentForm.email}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          email: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.email ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter your email address"
-                    />
-                    {studentErrors.email && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.email}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="typeOfShoot"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Type of Shoot <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="typeOfShoot"
-                      value={studentForm.typeOfShoot}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          typeOfShoot: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.typeOfShoot ? "border-red-500" : "border-gray-200"}`}
-                    >
-                      <option value="">Select type of shoot</option>
-                      <option value="Event">Event</option>
-                      <option value="Portfolio">Portfolio</option>
-                      <option value="Reels">Reels</option>
-                      <option value="Birthday">Birthday</option>
-                      <option value="Other">Other</option>
-                    </select>
-                    {studentErrors.typeOfShoot && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.typeOfShoot}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="budgetRange"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Budget Range <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      id="budgetRange"
-                      value={studentForm.budgetRange}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          budgetRange: e.target.value,
-                        })
-                      }
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.budgetRange ? "border-red-500" : "border-gray-200"}`}
-                    >
-                      <option value="">Select budget range</option>
-                      <option value="Under 2000">Under 2000</option>
-                      <option value="2000-5000">2000-5000</option>
-                      <option value="5000+">5000+</option>
-                    </select>
-                    {studentErrors.budgetRange && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.budgetRange}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="studentPhone"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Phone Number{" "}
-                      <span className="text-gray-400">(optional)</span>
-                    </label>
-                    <input
-                      type="tel"
-                      id="studentPhone"
-                      value={studentForm.phoneNumber}
-                      onChange={(e) =>
-                        setStudentForm({
-                          ...studentForm,
-                          phoneNumber: e.target.value.replace(/\D/g, ""),
-                        })
-                      }
-                      maxLength={10}
-                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-all ${studentErrors.phoneNumber ? "border-red-500" : "border-gray-200"}`}
-                      placeholder="Enter 10-digit phone number"
-                    />
-                    {studentErrors.phoneNumber && (
-                      <p className="mt-1 text-sm text-red-500">
-                        {studentErrors.phoneNumber}
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={isStudentSubmitting}
-                    className="w-full px-8 py-4 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
-                  >
-                    {isStudentSubmitting ? (
-                      <>
-                        <svg
-                          className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                          ></path>
-                        </svg>
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit"
-                    )}
-                  </button>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
+        </AnimatedSection>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 py-12">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h3 className="text-2xl font-semibold text-white mb-2">Camrova</h3>
-          <p className="text-gray-400">Every Moment Deserves a Lens.</p>
-        </div>
-      </footer>
+      {/* DUAL CTA */}
+      <section className="grid md:grid-cols-2">
+        <AnimatedSection>
+          <div className="bg-card p-8 sm:p-12 lg:p-16 border-b md:border-b-0 md:border-r border-border">
+            <h3 className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-3 sm:mb-4">
+              I need a photographer
+            </h3>
+            <p className="text-foreground/60 mb-6 sm:mb-8 max-w-sm">
+              Book verified Delhi photographers by the hour. Starting ₹1000.
+            </p>
+            <CTAButton href="/creators" variant="primary">
+              Find a Photographer
+            </CTAButton>
+          </div>
+        </AnimatedSection>
+
+        <AnimatedSection>
+          <div className="bg-gold p-8 sm:p-12 lg:p-16">
+            <h3 className="font-heading text-xl sm:text-2xl lg:text-3xl font-bold text-background mb-3 sm:mb-4">
+              I am a photographer
+            </h3>
+            <p className="text-background/80 mb-6 sm:mb-8 max-w-sm">
+              Get discovered. Earn more. First 3 bookings — zero commission.
+            </p>
+            <button
+              onClick={() => (window.location.href = "/photographers")}
+              className="inline-flex items-center justify-center px-6 py-3 font-semibold text-sm rounded-lg transition-all duration-300 bg-background text-gold border-2 border-transparent hover:border-background/30 hover:shadow-xl w-full sm:w-auto"
+            >
+              Join as Photographer
+            </button>
+          </div>
+        </AnimatedSection>
+      </section>
+
+      {/* WAITLIST SECTION */}
+      <section id="signup" className="py-16 sm:py-28 bg-pattern">
+        <AnimatedSection>
+          <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold mb-4">
+              Ready to book your shoot?
+            </h2>
+            <p className="text-foreground/60 mb-8 sm:mb-10">
+              Join the waitlist. We&apos;ll match you with the perfect
+              photographer within 24 hours.
+            </p>
+
+            {success ? (
+              <div className="bg-gold/10 border border-gold/30 rounded-lg p-6">
+                <p className="text-gold font-medium">
+                  Thanks! We&apos;ll be in touch soon. 📸
+                </p>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-4 text-left max-w-md mx-auto"
+              >
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Your Name *"
+                    value={form.fullName}
+                    onChange={(e) =>
+                      setForm({ ...form, fullName: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-foreground/40 focus:border-gold focus:outline-none transition-colors min-h-[48px]"
+                  />
+                  {errors.fullName && (
+                    <p className="text-red-400 text-xs mt-1">
+                      {errors.fullName}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    placeholder="Email *"
+                    value={form.email}
+                    onChange={(e) =>
+                      setForm({ ...form, email: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-foreground/40 focus:border-gold focus:outline-none transition-colors min-h-[48px]"
+                  />
+                  {errors.email && (
+                    <p className="text-red-400 text-xs mt-1">{errors.email}</p>
+                  )}
+                </div>
+                <div>
+                  <select
+                    value={form.typeOfShoot}
+                    onChange={(e) =>
+                      setForm({ ...form, typeOfShoot: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:border-gold focus:outline-none transition-colors min-h-[48px]"
+                  >
+                    <option value="">Select Shoot Type *</option>
+                    <option value="Reels">Reels</option>
+                    <option value="Portraits">Portraits</option>
+                    <option value="Product">Product</option>
+                    <option value="Brand Content">Brand Content</option>
+                    <option value="Events">Events</option>
+                    <option value="Other">Other</option>
+                  </select>
+                  {errors.typeOfShoot && (
+                    <p className="text-red-400 text-xs mt-1">
+                      {errors.typeOfShoot}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <select
+                    value={form.budgetRange}
+                    onChange={(e) =>
+                      setForm({ ...form, budgetRange: e.target.value })
+                    }
+                    className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground focus:border-gold focus:outline-none transition-colors min-h-[48px]"
+                  >
+                    <option value="">Budget Range *</option>
+                    <option value="Under 2000">Under ₹2000</option>
+                    <option value="2000-5000">₹2000 - ₹5000</option>
+                    <option value="5000+">₹5000+</option>
+                  </select>
+                  {errors.budgetRange && (
+                    <p className="text-red-400 text-xs mt-1">
+                      {errors.budgetRange}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="tel"
+                    placeholder="Phone (optional)"
+                    value={form.phoneNumber}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        phoneNumber: e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10),
+                      })
+                    }
+                    maxLength={10}
+                    className="w-full px-4 py-3 bg-card border border-border rounded-lg text-foreground placeholder:text-foreground/40 focus:border-gold focus:outline-none transition-colors min-h-[48px]"
+                  />
+                  {errors.phoneNumber && (
+                    <p className="text-red-400 text-xs mt-1">
+                      {errors.phoneNumber}
+                    </p>
+                  )}
+                </div>
+                <CTAButton
+                  type="submit"
+                  variant="primary"
+                  fullWidth
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Join Waitlist"}
+                </CTAButton>
+              </form>
+            )}
+          </div>
+        </AnimatedSection>
+      </section>
+
+      <Footer />
     </div>
   );
 }
