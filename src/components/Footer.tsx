@@ -68,7 +68,7 @@ export default function Footer() {
               Connect
             </h4>
             <a
-              href="https://instagram.com/camrova"
+              href="https://www.instagram.com/camrova1/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-foreground/60 hover:text-gold transition-colors text-sm"
